@@ -306,7 +306,11 @@ content_frame.grid_columnconfigure(1, weight=1)
 
 # Left panel - Input with scrolling
 left_panel = ttk.Frame(content_frame, style="Card.TFrame")
-left_panel.grid(row=0, column=0, fill="both", expand=True, padx=(0, 10), sticky="nsew")
+left_panel.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+left_panel.grid_rowconfigure(0, weight=1)  # Constraints canvas expands
+left_panel.grid_rowconfigure(1, weight=0)  # Objective frame does not expand
+left_panel.grid_columnconfigure(0, weight=1)
+left_panel.grid_columnconfigure(1, weight=0)
 
 # Create a scrollable frame for constraints
 constraints_canvas = tk.Canvas(left_panel, bg=SURFACE_COLOR, highlightthickness=0, height=200)
@@ -321,9 +325,9 @@ constraints_frame.bind(
 constraints_canvas.create_window((0, 0), window=constraints_frame, anchor="nw", tags="frame")
 constraints_canvas.configure(yscrollcommand=scrollbar.set)
 
-# Pack scrollable frame
-constraints_canvas.pack(side="left", fill="x", expand=True, pady=(0, 15), padx=15)
-scrollbar.pack(side="right", fill="y", padx=(0, 15))
+# Grid scrollable frame in left_panel
+constraints_canvas.grid(row=0, column=0, sticky="nsew", pady=(0, 15), padx=15)
+scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 15))
 
 # Enable mousewheel scrolling
 def _on_mousewheel(event):
@@ -357,7 +361,7 @@ add_btn = ttk.Button(constraints_frame, text="Add Constraint",
 
 # Objective frame
 objective_frame = ttk.Frame(left_panel, style="Card.TFrame")
-objective_frame.pack(fill="both", expand=False, pady=(15, 0), padx=15, ipadx=10, ipady=10)
+objective_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(15, 0), padx=15, ipadx=10, ipady=10)
 
 objective_title = ttk.Label(objective_frame, text="Objective Function",
                            style="Subheader.TLabel")
@@ -406,7 +410,7 @@ solve_btn.pack(fill="x", pady=(10, 15))
 
 # Right panel - Results and Graph
 right_panel = ttk.Frame(content_frame, style="Card.TFrame")
-right_panel.grid(row=0, column=1, fill="both", expand=True, padx=(10, 0), sticky="nsew")
+right_panel.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
 right_panel.grid_rowconfigure(2, weight=1)  # Graph takes up most space
 right_panel.grid_rowconfigure(3, weight=0)  # Details text
 right_panel.grid_columnconfigure(0, weight=1)
@@ -423,14 +427,14 @@ status_label.grid(row=1, column=0, sticky="w", padx=15, pady=(0, 10))
 
 # Graph container (embedded matplotlib) - takes up most of the space
 graph_frame = ttk.Frame(right_panel, style="Card.TFrame")
-graph_frame.grid(row=2, column=0, fill="both", expand=True, padx=15, pady=(0, 10), sticky="nsew")
+graph_frame.grid(row=2, column=0, padx=15, pady=(0, 10), sticky="nsew")
 
 # Placeholder for the embedded chart
 graph_canvas = None
 
 # Details panel below graph (with scrolling if needed)
 details_frame = ttk.Frame(right_panel, style="Card.TFrame")
-details_frame.grid(row=3, column=0, fill="both", expand=False, padx=15, pady=(0, 10), sticky="ew")
+details_frame.grid(row=3, column=0, padx=15, pady=(0, 10), sticky="ew")
 
 details_text = tk.Text(details_frame, height=8, wrap="word", font=("Segoe UI", 9),
                         bg=SURFACE_COLOR, fg=TEXT_COLOR, bd=1, relief="groove")
