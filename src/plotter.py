@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('TkAgg')  # Set backend before importing pyplot
 import matplotlib.pyplot as plt
 
 
@@ -5,23 +7,67 @@ def plot_graph(constraints, solution_point):
     if not constraints:
         raise ValueError("No constraints to plot")
 
-    x_vals = [i * 0.1 for i in range(0, 200)]
-    plt.figure(figsize=(6, 6))
+    # Calculate dynamic range based on constraint values
+    max_val = 10  # minimum range
+
+    for a, b, c in constraints:
+        # Consider intersection points with axes
+        if abs(a) > 1e-12:
+            x_intersect = abs(c / a)
+            max_val = max(max_val, x_intersect)
+        if abs(b) > 1e-12:
+            y_intersect = abs(c / b)
+            max_val = max(max_val, y_intersect)
+
+    # Add some padding and ensure reasonable minimum
+    plot_range = max(20, max_val * 1.5)
+    num_points = max(200, int(plot_range * 10))  # Ensure good resolution
+
+    x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
+
+    plt.figure(figsize=(8, 6))
 
     y_all = []
 
+def plot_graph(constraints, solution_point):
+    if not constraints:
+        raise ValueError("No constraints to plot")
+
+    # Calculate dynamic range based on constraint values
+    max_val = 10  # minimum range
+
     for a, b, c in constraints:
+        # Consider intersection points with axes
+        if abs(a) > 1e-12:
+            x_intersect = abs(c / a)
+            max_val = max(max_val, x_intersect)
+        if abs(b) > 1e-12:
+            y_intersect = abs(c / b)
+            max_val = max(max_val, y_intersect)
+
+    # Add some padding and ensure reasonable minimum
+    plot_range = max(20, max_val * 1.5)
+    num_points = max(200, int(plot_range * 10))  # Ensure good resolution
+
+    x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    y_all = []
+
+    # Plot constraints with numbered labels
+    for i, (a, b, c) in enumerate(constraints, 1):
         if abs(b) > 1e-12:
             y_vals = [(c - a * x) / b for x in x_vals]
             y_all.append(y_vals)
-            plt.plot(x_vals, y_vals, lw=1.5, label=f'{a}x + {b}y ≤ {c}')
+            ax.plot(x_vals, y_vals, lw=1.5, label=f'Constraint {i}: {a}x + {b}y ≤ {c}')
         elif abs(a) > 1e-12:
             x_line = c / a
-            plt.axvline(x=x_line, lw=1.5, label=f'{a}x ≤ {c}')
+            ax.axvline(x=x_line, lw=1.5, label=f'Constraint {i}: {a}x ≤ {c}')
 
     if y_all:
         y_min = [min(line[i] for line in y_all) for i in range(len(x_vals))]
-        plt.fill_between(x_vals, [0] * len(x_vals), y_min, where=[y >= 0 for y in y_min], alpha=0.25)
+        ax.fill_between(x_vals, [0] * len(x_vals), y_min, where=[y >= 0 for y in y_min], alpha=0.25)
 
     corner_points = set()
     n = len(constraints)
@@ -66,16 +112,31 @@ def plot_graph(constraints, solution_point):
     all_x = [p[0] for p in corner_points] + [0]
     all_y = [p[1] for p in corner_points] + [0]
 
-    max_x = max(all_x + [10])
-    max_y = max(all_y + [10])
+    if solution_point:
+        all_x.append(solution_point[0])
+        all_y.append(solution_point[1])
 
-    plt.xlim(0, max_x + 5)
-    plt.ylim(0, max_y + 5)
+    # Calculate dynamic limits based on all points and plot_range
+    max_x = max(all_x + [plot_range * 0.8])
+    max_y = max(all_y + [plot_range * 0.8])
 
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('Graphical Method - Feasible Region')
-    plt.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # Determine a unified scale so the region appears large and consistent
+    axis_max = max(max_x, max_y, 1)
+    xlim_max = max(axis_max * 1.5, 10)
+    ylim_max = max(axis_max * 1.5, 10)
+
+    # For small-scale problems, enforce a bigger frame to avoid tiny charts
+    xlim_max = max(xlim_max, 15)
+    ylim_max = max(ylim_max, 15)
+
+    ax.set_xlim(0, xlim_max)
+    ax.set_ylim(0, ylim_max)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title('Graphical Method - Feasible Region')
+    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.legend()
+    fig.tight_layout()
+
+    return fig, corner_points
