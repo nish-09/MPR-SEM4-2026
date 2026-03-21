@@ -271,7 +271,12 @@ def run_solver():
 root = tk.Tk()
 root.title("LPP Graphical Method Solver")
 root.configure(bg=BACKGROUND_COLOR)
-root.geometry("1200x700")
+root.geometry("1400x800")
+root.minsize(800, 600)  # Set minimum window size for responsiveness
+
+# Configure grid for main window
+root.grid_rowconfigure(0, weight=1)
+root.grid_columnconfigure(0, weight=1)
 
 # Configure styles
 configure_styles()
@@ -279,6 +284,8 @@ configure_styles()
 # Main container
 main_frame = ttk.Frame(root, style="Card.TFrame")
 main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+main_frame.grid_rowconfigure(1, weight=1)
+main_frame.grid_columnconfigure(0, weight=1)
 
 # Header section
 header_frame = ttk.Frame(main_frame, style="Card.TFrame")
@@ -288,17 +295,40 @@ header = ttk.Label(header_frame, text="Linear Programming Problem Solver",
                   style="Header.TLabel", anchor="center")
 header.pack(pady=15)
 
-# Content frame
+# Content frame with responsive layout
 content_frame = ttk.Frame(main_frame, style="Card.TFrame")
 content_frame.pack(fill="both", expand=True)
 
-# Left panel - Input
-left_panel = ttk.Frame(content_frame, style="Card.TFrame")
-left_panel.pack(side="left", fill="both", expand=True, padx=(0, 10))
+# Configure grid weights for responsive panels
+content_frame.grid_rowconfigure(0, weight=1)
+content_frame.grid_columnconfigure(0, weight=1)
+content_frame.grid_columnconfigure(1, weight=1)
 
-# Constraint frame
-constraints_frame = ttk.Frame(left_panel, style="Card.TFrame")
-constraints_frame.pack(fill="x", pady=(0, 15), padx=15, ipadx=10, ipady=10)
+# Left panel - Input with scrolling
+left_panel = ttk.Frame(content_frame, style="Card.TFrame")
+left_panel.grid(row=0, column=0, fill="both", expand=True, padx=(0, 10), sticky="nsew")
+
+# Create a scrollable frame for constraints
+constraints_canvas = tk.Canvas(left_panel, bg=SURFACE_COLOR, highlightthickness=0, height=200)
+scrollbar = ttk.Scrollbar(left_panel, orient="vertical", command=constraints_canvas.yview)
+constraints_frame = ttk.Frame(constraints_canvas, style="Card.TFrame")
+
+constraints_frame.bind(
+    "<Configure>",
+    lambda e: constraints_canvas.configure(scrollregion=constraints_canvas.bbox("all"))
+)
+
+constraints_canvas.create_window((0, 0), window=constraints_frame, anchor="nw", tags="frame")
+constraints_canvas.configure(yscrollcommand=scrollbar.set)
+
+# Pack scrollable frame
+constraints_canvas.pack(side="left", fill="x", expand=True, pady=(0, 15), padx=15)
+scrollbar.pack(side="right", fill="y", padx=(0, 15))
+
+# Enable mousewheel scrolling
+def _on_mousewheel(event):
+    constraints_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+constraints_canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
 # Use grid layout for constraints_frame
 constraints_frame.grid_columnconfigure(0, weight=1)
@@ -327,7 +357,7 @@ add_btn = ttk.Button(constraints_frame, text="Add Constraint",
 
 # Objective frame
 objective_frame = ttk.Frame(left_panel, style="Card.TFrame")
-objective_frame.pack(fill="x", pady=(15, 0), padx=15, ipadx=10, ipady=10)
+objective_frame.pack(fill="both", expand=False, pady=(15, 0), padx=15, ipadx=10, ipady=10)
 
 objective_title = ttk.Label(objective_frame, text="Objective Function",
                            style="Subheader.TLabel")
@@ -376,41 +406,41 @@ solve_btn.pack(fill="x", pady=(10, 15))
 
 # Right panel - Results and Graph
 right_panel = ttk.Frame(content_frame, style="Card.TFrame")
-right_panel.pack(side="right", fill="both", expand=True, padx=(10, 0))
+right_panel.grid(row=0, column=1, fill="both", expand=True, padx=(10, 0), sticky="nsew")
+right_panel.grid_rowconfigure(2, weight=1)  # Graph takes up most space
+right_panel.grid_rowconfigure(3, weight=0)  # Details text
+right_panel.grid_columnconfigure(0, weight=1)
 
 results_title = ttk.Label(right_panel, text="Results",
                          style="Subheader.TLabel")
-results_title.pack(anchor="w", padx=15, pady=(15, 10))
+results_title.grid(row=0, column=0, sticky="w", padx=15, pady=(15, 10))
 
-# Graph container (embedded matplotlib)
+# Status bar moved to after results title
+status_label = ttk.Label(right_panel, text="Ready to solve LPP",
+                        font=("Segoe UI", 9), foreground=SECONDARY_COLOR,
+                        background=SURFACE_COLOR)
+status_label.grid(row=1, column=0, sticky="w", padx=15, pady=(0, 10))
+
+# Graph container (embedded matplotlib) - takes up most of the space
 graph_frame = ttk.Frame(right_panel, style="Card.TFrame")
-graph_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+graph_frame.grid(row=2, column=0, fill="both", expand=True, padx=15, pady=(0, 10), sticky="nsew")
 
 # Placeholder for the embedded chart
 graph_canvas = None
 
-# Details panel below graph
+# Details panel below graph (with scrolling if needed)
 details_frame = ttk.Frame(right_panel, style="Card.TFrame")
-details_frame.pack(fill="both", expand=False, padx=15, pady=(0, 10))
+details_frame.grid(row=3, column=0, fill="both", expand=False, padx=15, pady=(0, 10), sticky="ew")
 
-details_text = tk.Text(details_frame, height=10, wrap="word", font=("Segoe UI", 10),
+details_text = tk.Text(details_frame, height=8, wrap="word", font=("Segoe UI", 9),
                         bg=SURFACE_COLOR, fg=TEXT_COLOR, bd=1, relief="groove")
 details_text.pack(fill="both", expand=True)
 details_text.config(state="disabled")
 
 result_label = tk.Label(right_panel, text="Enter constraints and objective function,\nthen click 'Solve Problem' to see results.",
-                       font=("Segoe UI", 11), bg=SURFACE_COLOR, fg=TEXT_COLOR,
-                       justify="left", anchor="w", wraplength=450)
-result_label.pack(padx=15, pady=(0, 15), anchor="w", fill="both", expand=True)
-
-# Status bar
-status_frame = ttk.Frame(main_frame, style="Card.TFrame")
-status_frame.pack(fill="x", pady=(20, 0))
-
-status_label = ttk.Label(status_frame, text="Ready to solve LPP",
-                        font=("Segoe UI", 9), foreground=SECONDARY_COLOR,
-                        background=SURFACE_COLOR)
-status_label.pack(pady=10)
+                       font=("Segoe UI", 10), bg=SURFACE_COLOR, fg=TEXT_COLOR,
+                       justify="left", anchor="w", wraplength=400)
+result_label.grid(row=4, column=0, sticky="nsew", padx=15, pady=(0, 15))
 
 # Preset default constraints
 add_constraint()

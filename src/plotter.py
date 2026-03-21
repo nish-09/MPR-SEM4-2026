@@ -25,33 +25,8 @@ def plot_graph(constraints, solution_point):
 
     x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
 
-    plt.figure(figsize=(8, 6))
-
-    y_all = []
-
-def plot_graph(constraints, solution_point):
-    if not constraints:
-        raise ValueError("No constraints to plot")
-
-    # Calculate dynamic range based on constraint values
-    max_val = 10  # minimum range
-
-    for a, b, c in constraints:
-        # Consider intersection points with axes
-        if abs(a) > 1e-12:
-            x_intersect = abs(c / a)
-            max_val = max(max_val, x_intersect)
-        if abs(b) > 1e-12:
-            y_intersect = abs(c / b)
-            max_val = max(max_val, y_intersect)
-
-    # Add some padding and ensure reasonable minimum
-    plot_range = max(20, max_val * 1.5)
-    num_points = max(200, int(plot_range * 10))  # Ensure good resolution
-
-    x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
-
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Use responsive figsize - will adapt to container
+    fig, ax = plt.subplots(figsize=(7, 5.5), dpi=100)
 
     y_all = []
 
@@ -103,11 +78,11 @@ def plot_graph(constraints, solution_point):
     corner_points = sorted(corner_points)
 
     for x, y in corner_points:
-        plt.plot(x, y, 'go')
-        plt.text(x, y, f'({round(x, 2)}, {round(y, 2)})', fontsize=8, color='green')
+        ax.plot(x, y, 'go', markersize=6)
+        ax.text(x, y, f'({round(x, 2)}, {round(y, 2)})', fontsize=8, color='green')
 
     if solution_point:
-        plt.plot(solution_point[0], solution_point[1], 'ro', markersize=10, label='Optimal Solution')
+        ax.plot(solution_point[0], solution_point[1], 'ro', markersize=10, label='Optimal Solution')
 
     all_x = [p[0] for p in corner_points] + [0]
     all_y = [p[1] for p in corner_points] + [0]
@@ -132,11 +107,11 @@ def plot_graph(constraints, solution_point):
     ax.set_xlim(0, xlim_max)
     ax.set_ylim(0, ylim_max)
 
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_title('Graphical Method - Feasible Region')
+    ax.set_xlabel('x', fontsize=10)
+    ax.set_ylabel('y', fontsize=10)
+    ax.set_title('Graphical Method - Feasible Region', fontsize=11, fontweight='bold')
     ax.grid(True, linestyle='--', alpha=0.7)
-    ax.legend()
+    ax.legend(fontsize=9, loc='upper right')
     fig.tight_layout()
 
     return fig, corner_points
