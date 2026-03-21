@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('TkAgg')  # Set backend before importing pyplot
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
 def plot_graph(constraints, solution_point):
@@ -25,8 +26,33 @@ def plot_graph(constraints, solution_point):
 
     x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
 
-    # Use responsive figsize - will adapt to container
-    fig, ax = plt.subplots(figsize=(7, 5.5), dpi=100)
+    plt.figure(figsize=(8, 6))
+
+    y_all = []
+
+def plot_graph(constraints, solution_point):
+    if not constraints:
+        raise ValueError("No constraints to plot")
+
+    # Calculate dynamic range based on constraint values
+    max_val = 10  # minimum range
+
+    for a, b, c in constraints:
+        # Consider intersection points with axes
+        if abs(a) > 1e-12:
+            x_intersect = abs(c / a)
+            max_val = max(max_val, x_intersect)
+        if abs(b) > 1e-12:
+            y_intersect = abs(c / b)
+            max_val = max(max_val, y_intersect)
+
+    # Add some padding and ensure reasonable minimum
+    plot_range = max(20, max_val * 1.5)
+    num_points = max(200, int(plot_range * 10))  # Ensure good resolution
+
+    x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     y_all = []
 
@@ -78,11 +104,11 @@ def plot_graph(constraints, solution_point):
     corner_points = sorted(corner_points)
 
     for x, y in corner_points:
-        ax.plot(x, y, 'go', markersize=6)
-        ax.text(x, y, f'({round(x, 2)}, {round(y, 2)})', fontsize=8, color='green')
+        plt.plot(x, y, 'go')
+        plt.text(x, y, f'({round(x, 2)}, {round(y, 2)})', fontsize=8, color='green')
 
     if solution_point:
-        ax.plot(solution_point[0], solution_point[1], 'ro', markersize=10, label='Optimal Solution')
+        plt.plot(solution_point[0], solution_point[1], 'ro', markersize=10, label='Optimal Solution')
 
     all_x = [p[0] for p in corner_points] + [0]
     all_y = [p[1] for p in corner_points] + [0]
@@ -91,27 +117,43 @@ def plot_graph(constraints, solution_point):
         all_x.append(solution_point[0])
         all_y.append(solution_point[1])
 
-    # Calculate dynamic limits based on all points and plot_range
-    max_x = max(all_x + [plot_range * 0.8])
-    max_y = max(all_y + [plot_range * 0.8])
-
-    # Determine a unified scale so the region appears large and consistent
-    axis_max = max(max_x, max_y, 1)
-    xlim_max = max(axis_max * 1.5, 10)
-    ylim_max = max(axis_max * 1.5, 10)
-
-    # For small-scale problems, enforce a bigger frame to avoid tiny charts
-    xlim_max = max(xlim_max, 15)
-    ylim_max = max(ylim_max, 15)
-
+    # Fixed bounds 0..7 per user request
+    xlim_max = 7
+    ylim_max = 7
     ax.set_xlim(0, xlim_max)
     ax.set_ylim(0, ylim_max)
 
-    ax.set_xlabel('x', fontsize=10)
-    ax.set_ylabel('y', fontsize=10)
-    ax.set_title('Graphical Method - Feasible Region', fontsize=11, fontweight='bold')
-    ax.grid(True, linestyle='--', alpha=0.7)
-    ax.legend(fontsize=9, loc='upper right')
-    fig.tight_layout()
+    # Enforce 1 unit = 1 unit in both dimensions (square scaling)
+    ax.set_aspect('equal', adjustable='box')
+
+    # Use integer ticks at 1-unit increments
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.yaxis.set_major_locator(MultipleLocator(1))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    # Dark theme styling for plot elements
+    ax.set_facecolor('#0f172a')
+    fig.patch.set_facecolor('#0f172a')
+    ax.spines['bottom'].set_color('#e2e8f0')
+    ax.spines['top'].set_color('#e2e8f0')
+    ax.spines['left'].set_color('#e2e8f0')
+    ax.spines['right'].set_color('#e2e8f0')
+    ax.tick_params(colors='#e2e8f0', which='both')
+    ax.xaxis.label.set_color('#e2e8f0')
+    ax.yaxis.label.set_color('#e2e8f0')
+    ax.title.set_color('#e2e8f0')
+    ax.grid(True, linestyle='--', alpha=0.5, color='#334155')
+
+    legend = ax.legend()
+    if legend:
+        for text in legend.get_texts():
+            text.set_color('#e2e8f0')
+        legend.get_frame().set_facecolor('#1e293b')
+        legend.get_frame().set_edgecolor('#334155')
+
+    # Reduce extra whitespace around plot to minimize margin
+    fig.tight_layout(pad=0.5)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.95, bottom=0.05)
 
     return fig, corner_points

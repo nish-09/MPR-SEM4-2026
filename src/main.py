@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('TkAgg')  # Set backend before importing pyplot
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from solver import solve_lpp
@@ -9,15 +9,21 @@ from plotter import plot_graph
 
 constraints_ui = []
 
-# Modern color scheme
-PRIMARY_COLOR = "#2563eb"
+# Graph state for view controls
+current_fig = None
+current_zoom = 1.0
+MIN_ZOOM = 0.3
+MAX_ZOOM = 2.0
+
+# Dark theme color scheme
+PRIMARY_COLOR = "#3b82f6"
 SECONDARY_COLOR = "#64748b"
-SUCCESS_COLOR = "#059669"
-ERROR_COLOR = "#dc2626"
-BACKGROUND_COLOR = "#f8fafc"
-SURFACE_COLOR = "#ffffff"
-TEXT_COLOR = "#1e293b"
-ACCENT_COLOR = "#3b82f6"
+SUCCESS_COLOR = "#10b981"
+ERROR_COLOR = "#ef4444"
+BACKGROUND_COLOR = "#0f172a"
+SURFACE_COLOR = "#1e293b"
+TEXT_COLOR = "#f1f5f9"
+ACCENT_COLOR = "#60a5fa"
 
 DEFAULT_FONT = ("Segoe UI", 10)
 HEADER_FONT = ("Segoe UI", 20, "bold")
@@ -31,13 +37,13 @@ def configure_styles():
     # Button styles
     style.configure("Primary.TButton",
                    background=PRIMARY_COLOR,
-                   foreground="#000000",  # Changed to black
+                   foreground="#ffffff",
                    font=BUTTON_FONT,
                    padding=(5, 2),  # Made smaller
                    relief="flat")
     style.map("Primary.TButton",
-             background=[("active", "#1d4ed8"), ("pressed", "#1e40af")],
-             foreground=[("active", "#000000"), ("pressed", "#000000")])
+             background=[("active", "#2563eb"), ("pressed", "#1d4ed8")],
+             foreground=[("active", "#ffffff"), ("pressed", "#ffffff")])
 
     style.configure("Secondary.TButton",
                    background=SECONDARY_COLOR,
@@ -55,7 +61,7 @@ def configure_styles():
                    padding=(6, 3),
                    relief="flat")
     style.map("Danger.TButton",
-             background=[("active", "#b91c1c"), ("pressed", "#991b1b")])
+             background=[("active", "#dc2626"), ("pressed", "#b91c1c")])
 
     # Label styles
     style.configure("Header.TLabel",
@@ -152,6 +158,57 @@ def remove_constraint(entry_ref):
     constraints_ui = updated
     refresh_layout()
 
+# ---------- Graph View Controls ----------
+
+def refresh_plot_view():
+    global current_fig, graph_canvas, current_zoom
+    if current_fig is None or graph_canvas is None:
+        return
+
+    ax = current_fig.axes[0]
+    base_range = 7.0
+    view_range = max(1.0, min(base_range, base_range / current_zoom))
+
+    ax.set_xlim(0, view_range)
+    ax.set_ylim(0, view_range)
+    graph_canvas.draw_idle()
+    status_label.config(text=f"View range set to 0–{view_range:.1f}", foreground=SUCCESS_COLOR)
+
+
+def zoom_in():
+    global current_zoom
+    current_zoom = min(MAX_ZOOM, current_zoom * 1.25)
+    refresh_plot_view()
+
+
+def zoom_out():
+    global current_zoom
+    current_zoom = max(MIN_ZOOM, current_zoom / 1.25)
+    refresh_plot_view()
+
+
+def reset_view():
+    global current_zoom
+    current_zoom = 1.0
+    refresh_plot_view()
+
+
+def save_graph_image():
+    global current_fig
+    if current_fig is None:
+        status_label.config(text="No graph to save", foreground=ERROR_COLOR)
+        return
+
+    file_path = filedialog.asksaveasfilename(defaultextension='.png',
+                                             filetypes=[('PNG Image', '*.png'), ('JPEG Image', '*.jpg'), ('All Files', '*.*')])
+    if file_path:
+        try:
+            current_fig.savefig(file_path, dpi=150, bbox_inches='tight', facecolor=current_fig.get_facecolor())
+            status_label.config(text=f"Graph saved to {file_path}", foreground=SUCCESS_COLOR)
+        except Exception as e:
+            status_label.config(text=f"Save failed: {e}", foreground=ERROR_COLOR)
+
+
 # ---------- Solve ----------
 
 def run_solver():
@@ -200,11 +257,24 @@ def run_solver():
         graph_canvas.draw()
         graph_canvas.get_tk_widget().pack(fill="both", expand=True)
 
+        # Maintain view control references
+        global current_fig, current_zoom
+        current_fig = fig
+        current_zoom = 1.0
+        refresh_plot_view()
+
         # Build details text area content
         corner_text = "\n".join([f"({round(x, 3)}, {round(y, 3)})" for x, y in sorted(corner_points)])
 
         # As 'point of intersection', report all corner intersection points
         intersection_text = corner_text if corner_text else "None"
+
+        # Evaluate objective function at corner points
+        objective_evals = []
+        for x, y in sorted(corner_points):
+            zval = p * x + q * y
+            objective_evals.append(f"({round(x, 3)}, {round(y, 3)}): Z = {round(zval, 3)}")
+        objective_points_text = "\n".join(objective_evals) if objective_evals else "None"
 
         # Edge lines (the constraints) as displayed
         edge_text = "\n".join([f"Constraint {i}: {a}x + {b}y ≤ {c}" for i, (a, b, c) in enumerate(constraints, 1)])
@@ -236,10 +306,13 @@ def run_solver():
         axes_text = "\n".join(sorted(bounded_by_axes)) if bounded_by_axes else "None"
 
         # Prepare details text (below graph)
+        objective_formula = f"Z = {p}x + {q}y ({'Maximize' if var_max.get() else 'Minimize'})"
         details_data = (
+            f"Objective Function:\n{objective_formula}\n\n"
             f"Corner Points:\n{corner_text or 'None'}\n\n"
-            f"Optimal Point:\n({round(sol_point[0], 3)}, {round(sol_point[1], 3)})\n\n"
-            f"Intersection Points (same as corner points):\n{intersection_text}\n\n"
+            f"Objective values at corners:\n{objective_points_text}\n\n"
+            f"Optimal Point:\n({round(sol_point[0], 3)}, {round(sol_point[1], 3)})\n"
+            f"Z = {round(p * sol_point[0] + q * sol_point[1], 3)}\n\n"
             f"Edge Lines (Constraints):\n{edge_text}\n\n"
             f"Binding Constraints:\n{constraints_text}\n\n"
             f"Bounded by Axes:\n{axes_text}"
@@ -251,8 +324,12 @@ def run_solver():
         details_text.config(state="disabled")
 
         # Update result summary label
+        result_summary = (
+            f"Optimal Solution Found! | Point: ({round(sol_point[0], 3)}, {round(sol_point[1], 3)}) | "
+            f"Z = {round(sol_val, 3)} | {objective_formula}"
+        )
         result_label.config(
-            text=f"✅ Optimal Solution Found! | Point: ({round(sol_point[0], 3)}, {round(sol_point[1], 3)}) | Z = {round(sol_val, 3)}",
+            text=f"✅ {result_summary}",
             fg=SUCCESS_COLOR
         )
         status_label.config(text="Solution found successfully", foreground=SUCCESS_COLOR)
@@ -271,12 +348,7 @@ def run_solver():
 root = tk.Tk()
 root.title("LPP Graphical Method Solver")
 root.configure(bg=BACKGROUND_COLOR)
-root.geometry("1400x800")
-root.minsize(800, 600)  # Set minimum window size for responsiveness
-
-# Configure grid for main window
-root.grid_rowconfigure(0, weight=1)
-root.grid_columnconfigure(0, weight=1)
+root.geometry("1200x700")
 
 # Configure styles
 configure_styles()
@@ -284,8 +356,6 @@ configure_styles()
 # Main container
 main_frame = ttk.Frame(root, style="Card.TFrame")
 main_frame.pack(fill="both", expand=True, padx=20, pady=20)
-main_frame.grid_rowconfigure(1, weight=1)
-main_frame.grid_columnconfigure(0, weight=1)
 
 # Header section
 header_frame = ttk.Frame(main_frame, style="Card.TFrame")
@@ -295,44 +365,17 @@ header = ttk.Label(header_frame, text="Linear Programming Problem Solver",
                   style="Header.TLabel", anchor="center")
 header.pack(pady=15)
 
-# Content frame with responsive layout
+# Content frame
 content_frame = ttk.Frame(main_frame, style="Card.TFrame")
 content_frame.pack(fill="both", expand=True)
 
-# Configure grid weights for responsive panels
-content_frame.grid_rowconfigure(0, weight=1)
-content_frame.grid_columnconfigure(0, weight=1)
-content_frame.grid_columnconfigure(1, weight=1)
-
-# Left panel - Input with scrolling
+# Left panel - Input
 left_panel = ttk.Frame(content_frame, style="Card.TFrame")
-left_panel.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
-left_panel.grid_rowconfigure(0, weight=1)  # Constraints canvas expands
-left_panel.grid_rowconfigure(1, weight=0)  # Objective frame does not expand
-left_panel.grid_columnconfigure(0, weight=1)
-left_panel.grid_columnconfigure(1, weight=0)
+left_panel.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
-# Create a scrollable frame for constraints
-constraints_canvas = tk.Canvas(left_panel, bg=SURFACE_COLOR, highlightthickness=0, height=200)
-scrollbar = ttk.Scrollbar(left_panel, orient="vertical", command=constraints_canvas.yview)
-constraints_frame = ttk.Frame(constraints_canvas, style="Card.TFrame")
-
-constraints_frame.bind(
-    "<Configure>",
-    lambda e: constraints_canvas.configure(scrollregion=constraints_canvas.bbox("all"))
-)
-
-constraints_canvas.create_window((0, 0), window=constraints_frame, anchor="nw", tags="frame")
-constraints_canvas.configure(yscrollcommand=scrollbar.set)
-
-# Grid scrollable frame in left_panel
-constraints_canvas.grid(row=0, column=0, sticky="nsew", pady=(0, 15), padx=15)
-scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 15))
-
-# Enable mousewheel scrolling
-def _on_mousewheel(event):
-    constraints_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-constraints_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+# Constraint frame
+constraints_frame = ttk.Frame(left_panel, style="Card.TFrame")
+constraints_frame.pack(fill="x", pady=(0, 15), padx=15, ipadx=10, ipady=10)
 
 # Use grid layout for constraints_frame
 constraints_frame.grid_columnconfigure(0, weight=1)
@@ -361,7 +404,7 @@ add_btn = ttk.Button(constraints_frame, text="Add Constraint",
 
 # Objective frame
 objective_frame = ttk.Frame(left_panel, style="Card.TFrame")
-objective_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(15, 0), padx=15, ipadx=10, ipady=10)
+objective_frame.pack(fill="x", pady=(15, 0), padx=15, ipadx=10, ipady=10)
 
 objective_title = ttk.Label(objective_frame, text="Objective Function",
                            style="Subheader.TLabel")
@@ -410,41 +453,57 @@ solve_btn.pack(fill="x", pady=(10, 15))
 
 # Right panel - Results and Graph
 right_panel = ttk.Frame(content_frame, style="Card.TFrame")
-right_panel.grid(row=0, column=1, padx=(10, 0), sticky="nsew")
-right_panel.grid_rowconfigure(2, weight=1)  # Graph takes up most space
-right_panel.grid_rowconfigure(3, weight=0)  # Details text
-right_panel.grid_columnconfigure(0, weight=1)
+right_panel.pack(side="right", fill="both", expand=True, padx=(10, 0))
 
 results_title = ttk.Label(right_panel, text="Results",
                          style="Subheader.TLabel")
-results_title.grid(row=0, column=0, sticky="w", padx=15, pady=(15, 10))
+results_title.pack(anchor="w", padx=15, pady=(15, 10))
 
-# Status bar moved to after results title
-status_label = ttk.Label(right_panel, text="Ready to solve LPP",
-                        font=("Segoe UI", 9), foreground=SECONDARY_COLOR,
-                        background=SURFACE_COLOR)
-status_label.grid(row=1, column=0, sticky="w", padx=15, pady=(0, 10))
-
-# Graph container (embedded matplotlib) - takes up most of the space
+# Graph container (embedded matplotlib)
 graph_frame = ttk.Frame(right_panel, style="Card.TFrame")
-graph_frame.grid(row=2, column=0, padx=15, pady=(0, 10), sticky="nsew")
+graph_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+
+# Toolbar for graph operations
+view_toolbar = ttk.Frame(right_panel, style="Card.TFrame")
+view_toolbar.pack(fill="x", padx=15, pady=(0, 10))
+
+save_btn = ttk.Button(view_toolbar, text="Save Graph", style="Secondary.TButton", command=save_graph_image)
+save_btn.pack(side="left", padx=5, pady=5)
+
+zoom_in_btn = ttk.Button(view_toolbar, text="Zoom In", style="Secondary.TButton", command=zoom_in)
+zoom_in_btn.pack(side="left", padx=5, pady=5)
+
+zoom_out_btn = ttk.Button(view_toolbar, text="Zoom Out", style="Secondary.TButton", command=zoom_out)
+zoom_out_btn.pack(side="left", padx=5, pady=5)
+
+reset_view_btn = ttk.Button(view_toolbar, text="Reset View", style="Secondary.TButton", command=reset_view)
+reset_view_btn.pack(side="left", padx=5, pady=5)
 
 # Placeholder for the embedded chart
 graph_canvas = None
 
-# Details panel below graph (with scrolling if needed)
+# Details panel below graph
 details_frame = ttk.Frame(right_panel, style="Card.TFrame")
-details_frame.grid(row=3, column=0, padx=15, pady=(0, 10), sticky="ew")
+details_frame.pack(fill="both", expand=False, padx=15, pady=(0, 10))
 
-details_text = tk.Text(details_frame, height=8, wrap="word", font=("Segoe UI", 9),
+details_text = tk.Text(details_frame, height=10, wrap="word", font=("Segoe UI", 10),
                         bg=SURFACE_COLOR, fg=TEXT_COLOR, bd=1, relief="groove")
 details_text.pack(fill="both", expand=True)
 details_text.config(state="disabled")
 
 result_label = tk.Label(right_panel, text="Enter constraints and objective function,\nthen click 'Solve Problem' to see results.",
-                       font=("Segoe UI", 10), bg=SURFACE_COLOR, fg=TEXT_COLOR,
-                       justify="left", anchor="w", wraplength=400)
-result_label.grid(row=4, column=0, sticky="nsew", padx=15, pady=(0, 15))
+                       font=("Segoe UI", 11), bg=SURFACE_COLOR, fg=TEXT_COLOR,
+                       justify="left", anchor="w", wraplength=450)
+result_label.pack(padx=15, pady=(0, 15), anchor="w", fill="both", expand=True)
+
+# Status bar
+status_frame = ttk.Frame(main_frame, style="Card.TFrame")
+status_frame.pack(fill="x", pady=(20, 0))
+
+status_label = ttk.Label(status_frame, text="Ready to solve LPP",
+                        font=("Segoe UI", 9), foreground=SECONDARY_COLOR,
+                        background=SURFACE_COLOR)
+status_label.pack(pady=10)
 
 # Preset default constraints
 add_constraint()
