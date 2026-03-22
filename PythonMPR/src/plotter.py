@@ -218,3 +218,42 @@ def plot_graph(constraints, solution_point):
     fig.subplots_adjust(left=0.02, right=0.98, top=0.95, bottom=0.05)
 
     return fig, corner_points
+def plot_empty_graph():
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Same limits as your main graph
+    ax.set_xlim(0, 7)
+    ax.set_ylim(0, 7)
+
+    # Square scaling
+    ax.set_aspect('equal', adjustable='box')
+
+    # Integer ticks
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.yaxis.set_major_locator(MultipleLocator(1))
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    # Dark theme styling (same as your graph)
+    ax.set_facecolor('#0f172a')
+    fig.patch.set_facecolor('#0f172a')
+
+    ax.spines['bottom'].set_color('#e2e8f0')
+    ax.spines['top'].set_color('#e2e8f0')
+    ax.spines['left'].set_color('#e2e8f0')
+    ax.spines['right'].set_color('#e2e8f0')
+
+    ax.tick_params(colors='#e2e8f0', which='both')
+    ax.xaxis.label.set_color('#e2e8f0')
+    ax.yaxis.label.set_color('#e2e8f0')
+
+    ax.grid(True, linestyle='--', alpha=0.5, color='#334155')
+
+    # Optional message (UI polish)
+    ax.text(3.5, 3.5, "Click 'Solve Problem' to plot graph",
+            color='#64748b', ha='center', va='center', fontsize=12)
+
+    fig.tight_layout(pad=0.5)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.95, bottom=0.05)
+
+    return fig

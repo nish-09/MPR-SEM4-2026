@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from solver import solve_lpp
 from plotter import plot_graph
 import customtkinter as ctk
+from plotter import plot_graph, plot_empty_graph
 
 
 ctk.set_appearance_mode("blue")   
@@ -39,7 +40,22 @@ HEADER_FONT = ("Acme", 36, "bold")
 LABEL_FONT = ("Segoe UI", 18, "bold")
 BUTTON_FONT = ("Segoe UI", 12, "bold")
 
+def show_default_graph():
+    global graph_canvas, current_fig, current_zoom
 
+    if graph_canvas is not None:
+        graph_canvas.get_tk_widget().destroy()
+        plt.close('all')
+
+    fig = plot_empty_graph()
+
+    graph_canvas = FigureCanvasTkAgg(fig, master=graph_frame_container)
+    graph_canvas.draw()
+    graph_canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    current_fig = fig
+    current_zoom = 1.0
+    
 # ========== REUSABLE BORDERED CONTAINER HELPER ==========
 def create_bordered_container(parent, bg_color=SURFACE_COLOR, border_width=1, border_color=BORDER_COLOR, return_inner=False):
     """
@@ -679,7 +695,7 @@ objective_desc = ttk.Label(objective_frame_container,
 objective_desc.pack(anchor="w", pady=(0, 10))
 
 obj_input_frame = ttk.Frame(objective_frame_container, style="Card.TFrame")
-obj_input_frame.pack(fill="x", pady=(0, 10))
+obj_input_frame.pack(pady=(0, 10), anchor="center")
 
 ttk.Label(obj_input_frame, text="Z =", font=LABEL_FONT,
          background=SURFACE_COLOR, foreground="white").grid(row=0, column=0, padx=(0, 5), pady=5)
@@ -723,47 +739,43 @@ radio_frame = ttk.Frame(obj_input_frame, style="Card.TFrame")
 radio_frame.grid(row=0, column=5, padx=(0, 10))
 
 var_max = tk.BooleanVar(value=True)
-max_radio = tk.Radiobutton(
+max_radio = ctk.CTkRadioButton(
     radio_frame,
     text="Maximize",
     variable=var_max,
     value=True,
 
-    font=("Segoe UI", 16, "bold"),   
-    bg=SURFACE_COLOR,
-    fg="white",
+    font=("Segoe UI", 15, "bold"),
+    bg_color=SURFACE_COLOR,
+    fg_color="white",
+    text_color="white",
+    hover_color="#a2e1f5",
 
-    activebackground=SURFACE_COLOR,
-    activeforeground="white",
+    border_color="#22d3ee",
 
-    selectcolor="#22c55e",   
-    indicatoron=1,
-
-    padx=10, pady=5,       
-    bd=0
+    radiobutton_width=20,
+    radiobutton_height=20
 )
 
-min_radio = tk.Radiobutton(
+min_radio = ctk.CTkRadioButton(
     radio_frame,
     text="Minimize",
     variable=var_max,
     value=False,
 
-    font=("Segoe UI", 16, "bold"),
-    bg=SURFACE_COLOR,
-    fg="white",
+    font=("Segoe UI", 15, "bold"),
+    bg_color=SURFACE_COLOR,
+    fg_color="white",
+    text_color="white",
+    hover_color="#a2e1f5",
 
-    activebackground=SURFACE_COLOR,
-    activeforeground="white",
+    border_color="#22d3ee",
 
-    selectcolor="#22c55e",
-
-    indicatoron=1,
-    padx=10, pady=5,
-    bd=0
+    radiobutton_width=20,
+    radiobutton_height=20
 )
 
-max_radio.pack(side="left", padx=(0, 15))
+max_radio.pack(side="left", padx=(0, 20))
 min_radio.pack(side="left")
 
 # Define solve button hover effects before creating the button
@@ -877,6 +889,7 @@ status_label.pack()
 # Preset default constraints
 add_constraint()
 add_constraint()
+show_default_graph()
 
 print("LPP Graphical Method Solver starting...")
 root.mainloop()
