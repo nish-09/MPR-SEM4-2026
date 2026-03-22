@@ -26,32 +26,6 @@ def plot_graph(constraints, solution_point):
 
     x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
 
-    plt.figure(figsize=(8, 6))
-
-    y_all = []
-
-def plot_graph(constraints, solution_point):
-    if not constraints:
-        raise ValueError("No constraints to plot")
-
-    # Calculate dynamic range based on constraint values
-    max_val = 10  # minimum range
-
-    for a, b, c in constraints:
-        # Consider intersection points with axes
-        if abs(a) > 1e-12:
-            x_intersect = abs(c / a)
-            max_val = max(max_val, x_intersect)
-        if abs(b) > 1e-12:
-            y_intersect = abs(c / b)
-            max_val = max(max_val, y_intersect)
-
-    # Add some padding and ensure reasonable minimum
-    plot_range = max(20, max_val * 1.5)
-    num_points = max(200, int(plot_range * 10))  # Ensure good resolution
-
-    x_vals = [i * (plot_range / num_points) for i in range(0, num_points + 1)]
-
     fig, ax = plt.subplots(figsize=(8, 6))
 
     y_all = []
