@@ -9,8 +9,13 @@ from solver import solve_lpp
 from plotter import plot_graph
 import customtkinter as ctk
 
+<<<<<<< HEAD
 ctk.set_appearance_mode("blue")  
 ctk.set_default_color_theme("blue") 
+=======
+ctk.set_appearance_mode("blue")   # options: "dark", "light", "system"
+ctk.set_default_color_theme("blue")  # optional: "blue", "green", "dark-blue"
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
 
 constraints_ui = []
 
@@ -31,10 +36,17 @@ TEXT_COLOR = "#e2e8f0"
 ACCENT_COLOR = "#22d3ee"
 BORDER_COLOR = "#334155"  
 
+<<<<<<< HEAD
 DEFAULT_FONT = ("Segoe UI", 18)
 HEADER_FONT = ("Acme", 36, "bold")
 LABEL_FONT = ("Segoe UI", 18, "bold")
 BUTTON_FONT = ("Segoe UI", 12, "bold")
+=======
+DEFAULT_FONT = ("Segoe UI", 11)
+HEADER_FONT = ("Acme", 26, "bold")
+LABEL_FONT = ("Segoe UI", 11, "bold")
+BUTTON_FONT = ("Segoe UI", 10, "bold")
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
 
 # ========== REUSABLE BORDERED CONTAINER HELPER ==========
 def create_bordered_container(parent, bg_color=SURFACE_COLOR, border_width=1, border_color=BORDER_COLOR, return_inner=False):
@@ -63,6 +75,7 @@ def create_bordered_container(parent, bg_color=SURFACE_COLOR, border_width=1, bo
     return inner_frame
 
 # ========== TOOLBAR BUTTON WITH ACCENT BORDER ==========
+<<<<<<< HEAD
 def create_toolbar_button(parent, text, command):
     btn = ctk.CTkButton(
         parent,
@@ -78,6 +91,31 @@ def create_toolbar_button(parent, text, command):
         border_color="#22d3ee"        
     )
     btn.pack(side="left", padx=8, pady=6)
+=======
+def create_toolbar_button(parent, text, command, border_color=ACCENT_COLOR):
+    """
+    Create a toolbar button with custom colored border.
+    
+    Args:
+        parent: Parent widget
+        text: Button text
+        command: Button command callback
+        border_color: Border color (default: ACCENT_COLOR)
+    
+    Returns:
+        Button widget
+    """
+    border_frame = tk.Frame(parent, bg=border_color, bd=0, highlightthickness=0)
+    border_frame.pack(side="left", padx=5, pady=5)
+    
+    inner_frame = tk.Frame(border_frame, bg=SECONDARY_COLOR, bd=0, highlightthickness=0)
+    inner_frame.pack(fill="both", padx=1, pady=1)
+    
+    btn = tk.Button(inner_frame, text=text, bg=SECONDARY_COLOR, fg=TEXT_COLOR,
+                   font=BUTTON_FONT, relief="flat", bd=0, padx=8, pady=4,
+                   command=command)
+    btn.pack(fill="both", padx=2, pady=2)
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     return btn
 
 # Style configuration
@@ -91,7 +129,11 @@ def configure_styles():
                    background=PRIMARY_COLOR,
                    foreground="#ffffff",
                    font=BUTTON_FONT,
+<<<<<<< HEAD
                    padding=(5, 2),  
+=======
+                   padding=(5, 2),  # Made smaller
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
                    relief="flat")
     style.map("Primary.TButton",
              background=[("active", "#2563eb"), ("pressed", "#1d4ed8")],
@@ -140,7 +182,11 @@ def configure_styles():
     style.configure("Constraint.TCombobox",
     foreground="#e2e8f0",
     background="#1e293b",
+<<<<<<< HEAD
     fieldbackground="#1e293b",  
+=======
+    fieldbackground="#1e293b",   # 🔥 main fix
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     bordercolor="#22d3ee",
     lightcolor="#22d3ee",
     darkcolor="#22d3ee",
@@ -149,15 +195,26 @@ def configure_styles():
     relief="flat",
     highlightthickness=1,
     padding=4,
+<<<<<<< HEAD
     font=("Segoe UI", 15)
+=======
+    font=("Segoe UI", 10)
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     )
     style.map("Constraint.TCombobox",
     fieldbackground=[
         ("readonly", "#0f172a"),
+<<<<<<< HEAD
         ("active", "#1e293b")   
     ],
     background=[
         ("active", "#1e293b"), 
+=======
+        ("active", "#1e293b")   # 🔥 hover pe light
+    ],
+    background=[
+        ("active", "#1e293b"),  # 🔥 arrow area bhi light
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
         ("!active", "#0f172a")
     ],
     foreground=[("readonly", "#e2e8f0")],
@@ -170,10 +227,17 @@ def configure_styles():
     # Scrollbar style (dark theme)
     style.configure("Vertical.TScrollbar",
                 gripcount=0,
+<<<<<<< HEAD
                 background=SECONDARY_COLOR,   
                 darkcolor=SECONDARY_COLOR,
                 lightcolor=SECONDARY_COLOR,
                 troughcolor=BACKGROUND_COLOR, 
+=======
+                background=SECONDARY_COLOR,   # thumb color
+                darkcolor=SECONDARY_COLOR,
+                lightcolor=SECONDARY_COLOR,
+                troughcolor=BACKGROUND_COLOR, # track color
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
                 bordercolor=BACKGROUND_COLOR,
                 arrowcolor=TEXT_COLOR)
 
@@ -221,6 +285,7 @@ def add_constraint():
     constraints_frame_container,
     width=5,
     font=DEFAULT_FONT,
+<<<<<<< HEAD
     justify="center",          
     relief="groove",
     bd=2,
@@ -229,6 +294,16 @@ def add_constraint():
     insertbackground="#e2e8f0",
     highlightthickness=1,
     highlightbackground="#22d3ee",   
+=======
+    justify="center",          # ✅ center text
+    relief="groove",
+    bd=2,
+    bg="#1e293b",         # dark input background
+    fg="#e2e8f0",       # light text
+    insertbackground="#e2e8f0",
+    highlightthickness=1,
+    highlightbackground="#22d3ee",   # accent border always
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     highlightcolor="#22d3ee", 
     )
     x_label = tk.Label(constraints_frame_container, text="x", font=LABEL_FONT,
@@ -242,12 +317,21 @@ def add_constraint():
     justify="center",
     relief="groove",
     bd=2,
+<<<<<<< HEAD
     bg="#1e293b",         
     fg="#e2e8f0",       
     insertbackground="#e2e8f0",
     highlightthickness=1,
     highlightbackground="#22d3ee",   
     highlightcolor="#22d3ee",        
+=======
+    bg="#1e293b",         # dark input background
+    fg="#e2e8f0",       # light text
+    insertbackground="#e2e8f0",
+    highlightthickness=1,
+    highlightbackground="#22d3ee",   # accent border always
+    highlightcolor="#22d3ee",        # same on focus
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     )
     y_label = tk.Label(constraints_frame_container, text="y", font=LABEL_FONT,
                       bg=SURFACE_COLOR, fg=TEXT_COLOR)
@@ -276,11 +360,19 @@ def add_constraint():
     justify="center",
     relief="groove",
     bd=2,
+<<<<<<< HEAD
     bg="#1e293b",         
     fg="#e2e8f0",       
     insertbackground="#e2e8f0",  
     highlightthickness=1,
     highlightbackground="#22d3ee",   
+=======
+    bg="#1e293b",         # dark input background
+    fg="#e2e8f0",       # light text
+    insertbackground="#e2e8f0",  # cursor color (important!)
+    highlightthickness=1,
+    highlightbackground="#22d3ee",   # accent border always
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     highlightcolor="#22d3ee", 
     )
 
@@ -480,7 +572,11 @@ def run_solver():
         details_text.config(state="normal")
         details_text.delete("1.0", "end")
         details_text.insert("end", details_data)
+<<<<<<< HEAD
         adjust_text_height()   
+=======
+        adjust_text_height()   # 🔥 yeh add kar
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
         details_text.config(state="disabled")
 
         # Update result summary label
@@ -523,7 +619,11 @@ main_canvas = tk.Canvas(
     root,
     bg=BACKGROUND_COLOR,
     highlightthickness=0,
+<<<<<<< HEAD
     bd=0   
+=======
+    bd=0   # 🔥 ADD THIS
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
 )
 scrollbar = ttk.Scrollbar(root, orient="vertical", command=main_canvas.yview, style="Vertical.TScrollbar")
 def toggle_main_scrollbar(*args):
@@ -598,18 +698,30 @@ constraint_title.grid(row=0, column=0, columnspan=8, sticky="w", pady=(0, 5))
 
 constraint_desc = ttk.Label(constraints_frame_container,
                            text="Add inequalities in the form: ax + by ≤ c",
+<<<<<<< HEAD
                            font=("Segoe UI", 15), foreground="white",
+=======
+                           font=("Segoe UI", 9), foreground="white",
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
                            background=SURFACE_COLOR)
 constraint_desc.grid(row=1, column=0, columnspan=8, sticky="w", pady=(0, 10))
 
 add_btn = ctk.CTkButton(
     constraints_frame_container,
     text="Add Constraint",
+<<<<<<< HEAD
     fg_color="#2563eb",        
     hover_color="#60a5fa",     
     text_color="white",
     font=("Segoe UI", 14, "bold"),
     corner_radius=50,          
+=======
+    fg_color="#2563eb",        # dark blue
+    hover_color="#60a5fa",     # light blue on hover
+    text_color="white",
+    font=("Segoe UI", 14, "bold"),
+    corner_radius=50,          # 🔥 rounded corners
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     command=add_constraint
 )
 # add_btn will be positioned by refresh_layout
@@ -628,7 +740,11 @@ objective_title.pack(anchor="w", pady=(0, 5))
 
 objective_desc = ttk.Label(objective_frame_container,
                           text="Maximize or minimize: Z = px + qy",
+<<<<<<< HEAD
                           font=("Segoe UI", 15), foreground="white",
+=======
+                          font=("Segoe UI", 9), foreground="white",
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
                           background=SURFACE_COLOR)
 objective_desc.pack(anchor="w", pady=(0, 10))
 
@@ -697,8 +813,13 @@ def _on_solve_leave(e):
 solve_btn = ctk.CTkButton(
     objective_frame_container,
     text="Solve Problem",
+<<<<<<< HEAD
     fg_color="#16a34a",        
     hover_color="#4ade80",     
+=======
+    fg_color="#16a34a",        # dark green
+    hover_color="#4ade80",     # light green
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     text_color="white",
     font=("Segoe UI", 14, "bold"),
     corner_radius=50, 
@@ -721,16 +842,26 @@ results_heading.pack(anchor="w", pady=(0, 8))
 
 details_text = tk.Text(
     details_frame_container,
+<<<<<<< HEAD
     height=5,   
     wrap="word",
     font=("Segoe UI", 15),
+=======
+    height=5,   # initial
+    wrap="word",
+    font=("Segoe UI", 10),
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
     bg=SURFACE_COLOR,
     fg=TEXT_COLOR,
     bd=1,
     relief="groove"
 )
 
+<<<<<<< HEAD
 details_text.pack(fill="x", expand=False)   
+=======
+details_text.pack(fill="x", expand=False)   # ❗ important
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
 details_text.config(state="disabled")
 
 def adjust_text_height():
@@ -772,7 +903,11 @@ graph_canvas = None
 
 
 result_label = tk.Label(right_panel, text="Enter constraints and objective function,\nthen click 'Solve Problem' to see results.",
+<<<<<<< HEAD
                        font=("Segoe UI", 15), bg=SURFACE_COLOR, fg=TEXT_COLOR,
+=======
+                       font=("Segoe UI", 11), bg=SURFACE_COLOR, fg=TEXT_COLOR,
+>>>>>>> 3dc39c393ef424ae28905249c1e6096ce223b6ef
                        justify="left", anchor="w", wraplength=450)
 result_label.pack(padx=15, pady=(0, 10), anchor="w", fill="x")
 
