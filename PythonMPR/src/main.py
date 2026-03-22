@@ -10,8 +10,8 @@ from plotter import plot_graph
 import customtkinter as ctk
 
 
-ctk.set_appearance_mode("blue")   # options: "dark", "light", "system"
-ctk.set_default_color_theme("blue")  # optional: "blue", "green", "dark-blue"
+ctk.set_appearance_mode("blue")   
+ctk.set_default_color_theme("blue") 
 
 
 constraints_ui = []
@@ -23,7 +23,7 @@ MIN_ZOOM = 0.3
 MAX_ZOOM = 2.0
 
 # Dark theme color scheme
-PRIMARY_COLOR = "#14b8a6"      
+PRIMARY_COLOR = "#ffffff"      
 SECONDARY_COLOR = "#475569"
 SUCCESS_COLOR = "#4ade80"
 ERROR_COLOR = "#f87171"
@@ -238,14 +238,14 @@ def add_constraint():
     width=5,
     font=DEFAULT_FONT,
 
-    justify="center",          # ✅ center text
+    justify="center",          
     relief="groove",
     bd=2,
-    bg="#1e293b",         # dark input background
-    fg="#e2e8f0",       # light text
+    bg="#1e293b",        
+    fg="#e2e8f0",       
     insertbackground="#e2e8f0",
     highlightthickness=1,
-    highlightbackground="#22d3ee",   # accent border always
+    highlightbackground="#22d3ee",   
 
     highlightcolor="#22d3ee", 
     )
@@ -261,12 +261,12 @@ def add_constraint():
     relief="groove",
     bd=2,
 
-    bg="#1e293b",         # dark input background
-    fg="#e2e8f0",       # light text
+    bg="#1e293b",         
+    fg="#e2e8f0",      
     insertbackground="#e2e8f0",
     highlightthickness=1,
-    highlightbackground="#22d3ee",   # accent border always
-    highlightcolor="#22d3ee",        # same on focus
+    highlightbackground="#22d3ee",  
+    highlightcolor="#22d3ee",        
 
     )
     y_label = tk.Label(constraints_frame_container, text="y", font=LABEL_FONT,
@@ -287,7 +287,8 @@ def add_constraint():
         button_color="#1e293b",
         button_hover_color="#334155",
         dropdown_fg_color="#0f172a",
-        justify="center"
+        justify="center",
+        state="readonly"
     ) # Set default to first value
 
     c = tk.Entry(
@@ -298,11 +299,11 @@ def add_constraint():
     relief="groove",
     bd=2,
 
-    bg="#1e293b",         # dark input background
-    fg="#e2e8f0",       # light text
-    insertbackground="#e2e8f0",  # cursor color (important!)
+    bg="#1e293b",         
+    fg="#e2e8f0",       
+    insertbackground="#e2e8f0",  
     highlightthickness=1,
-    highlightbackground="#22d3ee",   # accent border always
+    highlightbackground="#22d3ee",  
 
     highlightcolor="#22d3ee", 
     )
@@ -510,7 +511,7 @@ def run_solver():
         details_text.delete("1.0", "end")
         details_text.insert("end", details_data)
 
-        adjust_text_height()   # 🔥 yeh add kar
+        adjust_text_height()
 
         details_text.config(state="disabled")
 
@@ -555,26 +556,31 @@ main_canvas = tk.Canvas(
     bg=BACKGROUND_COLOR,
     highlightthickness=0,
 
-    bd=0   # 🔥 ADD THIS
+    bd=0  
 
 )
 scrollbar = ttk.Scrollbar(root, orient="vertical", command=main_canvas.yview, style="Vertical.TScrollbar")
-def toggle_main_scrollbar(*args):
-    if main_canvas.yview() == (0.0, 1.0):
+def toggle_main_scrollbar(first, last):
+    if float(first) <= 0.0 and float(last) >= 1.0:
         scrollbar.pack_forget()
     else:
         scrollbar.pack(side="right", fill="y")
 
-main_canvas.configure(yscrollcommand=lambda *args: (scrollbar.set(*args), toggle_main_scrollbar()))
+main_canvas.configure(
+    yscrollcommand=lambda f, l: (
+        scrollbar.set(f, l),
+        toggle_main_scrollbar(f, l)
+    )
+)
 scrollbar.pack_forget()
 
 main_canvas.pack(side="left", fill="both", expand=True, padx=0, pady=0)
-scrollbar.pack(side="right", fill="y")
+
 
 # Main container (inside canvas)
 main_frame = ttk.Frame(main_canvas, style="Card.TFrame")
-main_frame.pack(fill="both", expand=True)
 main_canvas_window = main_canvas.create_window(0, 0, window=main_frame, anchor="nw")
+main_frame.pack(fill="both", expand=True)
 
 # Bind mousewheel/scroll events
 def _on_mousewheel(event):
@@ -593,13 +599,14 @@ main_canvas.bind_all("<Button-5>", _on_linux_scroll)
 # Update scroll region after frame is rendered
 def _configure_scroll_region(event=None):
     main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+    main_canvas.itemconfig(main_canvas_window, height=main_canvas.winfo_height())
 
 main_frame.bind("<Configure>", _configure_scroll_region)
 main_canvas.bind("<Configure>", lambda e: main_canvas.itemconfig(main_canvas_window, width=e.width))
 
 # Header section
 header_frame = tk.Frame(main_frame, bg=SURFACE_COLOR)
-header_frame.pack(fill="x", pady=(0, 10))  # or even (0, 5)
+header_frame.pack(fill="x", pady=(0, 10)) 
 
 header = ttk.Label(header_frame, text="Linear Programming Problem Solver",
                   style="Header.TLabel", anchor="center")
@@ -641,11 +648,11 @@ add_btn = ctk.CTkButton(
     constraints_frame_container,
     text="Add Constraint",
 
-    fg_color="#2563eb",        # dark blue
-    hover_color="#60a5fa",     # light blue on hover
+    fg_color="#2563eb",       
+    hover_color="#60a5fa",     
     text_color="white",
     font=("Segoe UI", 14, "bold"),
-    corner_radius=50,          # 🔥 rounded corners
+    corner_radius=50,          
 
     command=add_constraint
 )
@@ -716,13 +723,47 @@ radio_frame = ttk.Frame(obj_input_frame, style="Card.TFrame")
 radio_frame.grid(row=0, column=5, padx=(0, 10))
 
 var_max = tk.BooleanVar(value=True)
-max_radio = tk.Radiobutton(radio_frame, text="Maximize", variable=var_max,
-                          value=True, font=DEFAULT_FONT, bg=SURFACE_COLOR, fg="white",
-                          activebackground=SURFACE_COLOR, selectcolor=PRIMARY_COLOR)
-min_radio = tk.Radiobutton(radio_frame, text="Minimize", variable=var_max,
-                          value=False, font=DEFAULT_FONT, bg=SURFACE_COLOR, fg="white",
-                          activebackground=SURFACE_COLOR, selectcolor=PRIMARY_COLOR)
-max_radio.pack(side="left", padx=(0, 10))
+max_radio = tk.Radiobutton(
+    radio_frame,
+    text="Maximize",
+    variable=var_max,
+    value=True,
+
+    font=("Segoe UI", 16, "bold"),   
+    bg=SURFACE_COLOR,
+    fg="white",
+
+    activebackground=SURFACE_COLOR,
+    activeforeground="white",
+
+    selectcolor="#22c55e",   
+    indicatoron=1,
+
+    padx=10, pady=5,       
+    bd=0
+)
+
+min_radio = tk.Radiobutton(
+    radio_frame,
+    text="Minimize",
+    variable=var_max,
+    value=False,
+
+    font=("Segoe UI", 16, "bold"),
+    bg=SURFACE_COLOR,
+    fg="white",
+
+    activebackground=SURFACE_COLOR,
+    activeforeground="white",
+
+    selectcolor="#22c55e",
+
+    indicatoron=1,
+    padx=10, pady=5,
+    bd=0
+)
+
+max_radio.pack(side="left", padx=(0, 15))
 min_radio.pack(side="left")
 
 # Define solve button hover effects before creating the button
@@ -737,8 +778,8 @@ solve_btn = ctk.CTkButton(
     objective_frame_container,
     text="Solve Problem",
 
-    fg_color="#16a34a",        # dark green
-    hover_color="#4ade80",     # light green
+    fg_color="#16a34a",       
+    hover_color="#4ade80",     
 
     text_color="white",
     font=("Segoe UI", 14, "bold"),
@@ -761,12 +802,9 @@ results_heading = ttk.Label(
 results_heading.pack(anchor="w", pady=(0, 8))
 
 details_text = tk.Text(
-    details_frame_container,
-
-    height=5,   
+    details_frame_container, 
     wrap="word",
     font=("Segoe UI", 15),
-
     bg=SURFACE_COLOR,
     fg=TEXT_COLOR,
     bd=1,
@@ -774,7 +812,7 @@ details_text = tk.Text(
 )
 
 
-details_text.pack(fill="x", expand=False)   # ❗ important
+details_text.pack(fill="both", expand=True)   
 
 details_text.config(state="disabled")
 
@@ -825,7 +863,7 @@ result_label.pack(padx=15, pady=(0, 10), anchor="w", fill="x")
 
 # Status bar with border
 status_frame_border, status_frame = create_bordered_container(main_frame, return_inner=True)
-status_frame_border.pack(fill="x", pady=(20, 0), padx=0)
+status_frame_border.pack(fill="x", pady=(20, 0))
 
 # Add padding to status frame
 status_frame_container = tk.Frame(status_frame, bg=SURFACE_COLOR)
