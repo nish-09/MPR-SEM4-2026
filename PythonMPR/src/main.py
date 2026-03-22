@@ -274,19 +274,20 @@ def add_constraint():
 
     sign_var = tk.StringVar(value="≤")
     sign_menu = ctk.CTkComboBox(
-    constraints_frame_container,
-    values=["≤", "≥", "<", ">"],
-    width=70,
-    height=30,
-    corner_radius=8,
-    border_width=1,
-    border_color="#22d3ee",
-    fg_color="#0f172a",
-    text_color="#e2e8f0",
-    button_color="#1e293b",
-    button_hover_color="#334155",
-    dropdown_fg_color="#0f172a",
-    justify="center"
+        constraints_frame_container,
+        values=["≤", "≥", "<", ">"],
+        variable=sign_var,
+        width=70,
+        height=30,
+        corner_radius=8,
+        border_width=1,
+        border_color="#22d3ee",
+        fg_color="#0f172a",
+        text_color="#e2e8f0",
+        button_color="#1e293b",
+        button_hover_color="#334155",
+        dropdown_fg_color="#0f172a",
+        justify="center"
     ) # Set default to first value
 
     c = tk.Entry(
@@ -408,11 +409,11 @@ def run_solver():
             if a == 0 and b == 0:
                 raise ValueError(f"Constraint {i} has a=b=0, invalid")
 
-            # Normalize to <= form for solver and plotter
+            # Store constraint with type: 1 for <=, -1 for >=
             if sign in ("≤", "<=", "<"):
-                constraints.append((a, b, c))
+                constraints.append((a, b, c, 1))
             elif sign in ("≥", ">=", ">"):
-                constraints.append((-a, -b, -c))
+                constraints.append((a, b, c, -1))
             else:
                 raise ValueError(f"Constraint {i} has unknown sign '{sign}'")
 
@@ -422,9 +423,12 @@ def run_solver():
         sol_point, sol_val = solve_lpp(constraints, (p, q), var_max.get())
 
         if sol_point is None:
-            error_message = "No feasible solution found.\n\nThis means the constraints are too restrictive or inconsistent."
+            if sol_val is None:
+                error_message = "The feasible region is unbounded.\n\nThis means the objective function can be made arbitrarily large (for maximization) or small (for minimization)."
+            else:
+                error_message = "No feasible solution found.\n\nThis means the constraints are too restrictive or inconsistent."
             result_label.config(text=f"❌ {error_message}", fg=ERROR_COLOR)
-            status_label.config(text="No solution found", foreground=ERROR_COLOR)
+            status_label.config(text="Unbounded" if sol_val is None else "No solution found", foreground=ERROR_COLOR)
             return
 
         # Plot graph and get corner points in embedded frame
@@ -458,7 +462,7 @@ def run_solver():
         objective_points_text = "\n".join(objective_evals) if objective_evals else "None"
 
         # Edge lines (the constraints) as displayed
-        edge_text = "\n".join([f"Constraint {i}: {a}x + {b}y ≤ {c}" for i, (a, b, c) in enumerate(constraints, 1)])
+        edge_text = "\n".join([f"Constraint {i}: {a}x + {b}y {'≤' if typ == 1 else '≥'} {c}" for i, (a, b, c, typ) in enumerate(constraints, 1)])
 
         # Analyze which constraints bound the feasible region
         binding_constraints = set()
@@ -475,9 +479,12 @@ def run_solver():
                 bounded_by_axes.add("y-axis (x ≥ 0)")
 
             # Check which constraints are binding at this point
-            for i, (a, b, c) in enumerate(constraints, 1):
-                if abs(a * x + b * y - c) < 1e-6:  # Point lies on constraint
+            for i, (a, b, c, typ) in enumerate(constraints, 1):
+                lhs = a * x + b * y
+                if typ == 1 and abs(lhs - c) < 1e-6:
                     binding_constraints.add(f"Constraint {i}: {a}x + {b}y ≤ {c}")
+                elif typ == -1 and abs(lhs - c) < 1e-6:
+                    binding_constraints.add(f"Constraint {i}: {a}x + {b}y ≥ {c}")
 
         # Format corner points
         corner_text = "\n".join([f"({round(x, 3)}, {round(y, 3)})" for x, y in sorted(corner_points)])
