@@ -58,19 +58,7 @@ def show_default_graph():
     
 # ========== REUSABLE BORDERED CONTAINER HELPER ==========
 def create_bordered_container(parent, bg_color=SURFACE_COLOR, border_width=1, border_color=BORDER_COLOR, return_inner=False):
-    """
-    Create a bordered container using tk.Frame for reliable border rendering.
     
-    Args:
-        parent: Parent widget
-        bg_color: Background color for the inner frame
-        border_width: Border thickness in pixels
-        border_color: Border color (hex or color name)
-        return_inner: If True, returns (border_frame, inner_frame). If False, returns inner_frame only.
-    
-    Returns:
-        inner_frame if return_inner=False, else (border_frame, inner_frame)
-    """
     # Outer frame creates the border effect
     border_frame = tk.Frame(parent, bg=border_color, bd=0, highlightthickness=0)
     
