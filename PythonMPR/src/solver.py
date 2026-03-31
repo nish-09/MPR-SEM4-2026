@@ -1,131 +1,117 @@
-def solve_lpp(constraints, objective, maximize=True):
-    """
-    constraints: list of tuples [(a1, b1, c1, type1), (a2, b2, c2, type2), ...]
-    where type is 1 for <= and -1 for >=
-    objective: tuple (p, q) → Z = p*x + q*y
-    maximize: True for maximization, False for minimization
-    """
+﻿from dataclasses import dataclass
+from typing import List, Tuple, Optional
 
-    points = []
 
-    # Step 1: Add origin (0,0) if feasible
-    valid_origin = True
-    for a, b, c, typ in constraints:
-        lhs = a*0 + b*0
-        if typ == 1 and lhs > c:
-            valid_origin = False
-            break
-        elif typ == -1 and lhs < c:
-            valid_origin = False
-            break
-    if valid_origin:
-        points.append((0, 0))
+@dataclass
+class Constraint:
+    a: float
+    b: float
+    c: float
+    typ: int  # 1 for <=, -1 for >=
 
-    # Step 2: Intersections with axes
-    for a, b, c, typ in constraints:
-        # x-intercept (y = 0)
-        if a != 0:
-            x = c / a if typ == 1 else c / a  # For >=, x-intercept is still c/a
-            y = 0
-            if x >= 0:
-                valid = True
-                for a1, b1, c1, typ1 in constraints:
-                    lhs = a1*x + b1*y
-                    if (typ1 == 1 and lhs > c1) or (typ1 == -1 and lhs < c1):
-                        valid = False
-                        break
-                if valid:
+
+class LppProblem:
+    """Object representation of a linear programming problem in two variables."""
+
+    def __init__(self,
+                 constraints: Optional[List[Constraint]] = None,
+                 objective: Tuple[float, float] = (0.0, 0.0),
+                 maximize: bool = True):
+        self.constraints = constraints or []
+        self.objective = objective
+        self.maximize = maximize
+
+    def add_constraint(self, a: float, b: float, c: float, typ: int):
+        self.constraints.append(Constraint(a, b, c, typ))
+
+    def is_point_feasible(self, x: float, y: float) -> bool:
+        for constraint in self.constraints:
+            lhs = constraint.a * x + constraint.b * y
+            if constraint.typ == 1 and lhs > constraint.c + 1e-9:
+                return False
+            if constraint.typ == -1 and lhs < constraint.c - 1e-9:
+                return False
+        return True
+
+    def all_candidate_points(self) -> List[Tuple[float, float]]:
+        points: List[Tuple[float, float]] = []
+
+        # Origin
+        if self.is_point_feasible(0.0, 0.0):
+            points.append((0.0, 0.0))
+
+        # Axis intersections
+        for constraint in self.constraints:
+            if abs(constraint.a) > 1e-12:
+                x = constraint.c / constraint.a
+                if x >= -1e-9 and self.is_point_feasible(x, 0.0):
+                    points.append((x, 0.0))
+
+            if abs(constraint.b) > 1e-12:
+                y = constraint.c / constraint.b
+                if y >= -1e-9 and self.is_point_feasible(0.0, y):
+                    points.append((0.0, y))
+
+        # Pairwise intersections
+        n = len(self.constraints)
+        for i in range(n):
+            c1 = self.constraints[i]
+            for j in range(i + 1, n):
+                c2 = self.constraints[j]
+                det = c1.a * c2.b - c2.a * c1.b
+                if abs(det) < 1e-12:
+                    continue
+
+                x = (c1.c * c2.b - c2.c * c1.b) / det
+                y = (c1.a * c2.c - c2.a * c1.c) / det
+
+                if x >= -1e-9 and y >= -1e-9 and self.is_point_feasible(x, y):
                     points.append((x, y))
 
-        # y-intercept (x = 0)
-        if b != 0:
-            x = 0
-            y = c / b if typ == 1 else c / b
-            if y >= 0:
-                valid = True
-                for a1, b1, c1, typ1 in constraints:
-                    lhs = a1*x + b1*y
-                    if (typ1 == 1 and lhs > c1) or (typ1 == -1 and lhs < c1):
-                        valid = False
-                        break
-                if valid:
-                    points.append((x, y))
+        # Deduplicate
+        unique_points = []
+        seen = set()
+        for x, y in points:
+            rounded = (round(x, 9), round(y, 9))
+            if rounded not in seen:
+                seen.add(rounded)
+                unique_points.append((x, y))
 
-    # Step 3: Intersections between lines
-    n = len(constraints)
-    for i in range(n):
-        a1, b1, c1, typ1 = constraints[i]
-        for j in range(i + 1, n):
-            a2, b2, c2, typ2 = constraints[j]
+        return unique_points
 
-            det = a1*b2 - a2*b1
-            if det != 0:
-                x = (c1*b2 - c2*b1) / det
-                y = (a1*c2 - a2*c1) / det
-
-                if x >= 0 and y >= 0:
-                    valid = True
-                    for a, b, c, typ in constraints:
-                        lhs = a*x + b*y
-                        if (typ == 1 and lhs > c) or (typ == -1 and lhs < c):
-                            valid = False
-                            break
-                    if valid:
-                        points.append((x, y))
-
-    # Step 4: Evaluate objective function
-    best_point = None
-    best_val = None
-
-    if not points:
-        return None, None
-
-    for x, y in points:
-        val = objective[0]*x + objective[1]*y
-
-        if best_val is None:
-            best_val = val
-            best_point = (x, y)
-        else:
-            if maximize and val > best_val:
-                best_val = val
-                best_point = (x, y)
-            elif not maximize and val < best_val:
-                best_val = val
-                best_point = (x, y)
-
-    # Check for unbounded
-    if best_point is not None:
-        x, y = best_point
-        unbounded = False
-        
-        # Check if can increase x
-        if x == 0 and objective[0] > 0:
-            has_x_upper_limit = False
-            for a, b, c, typ in constraints:
-                if abs(a) > 1e-12:
-                    if typ == 1 and a > 0:  # a*x <= c, limits x from above
-                        has_x_upper_limit = True
-                    elif typ == -1 and a < 0:  # -a*x <= -c, i.e. x >= c/(-a), limits x from below
-                        has_x_upper_limit = True  # since x >= something, but for increasing x, if it's binding, may not
-            # Actually, for x=0, if p>0, and no a>0 for <= (x<=), then can increase x
-            has_x_limit = False
-            for a, b, c, typ in constraints:
-                if abs(a) > 1e-12 and typ == 1 and a > 0:
-                    has_x_limit = True
-            if not has_x_limit:
-                unbounded = True
-        
-        # Check if can increase y
-        if y == 0 and objective[1] > 0:
-            has_y_limit = False
-            for a, b, c, typ in constraints:
-                if abs(b) > 1e-12 and typ == 1 and b > 0:
-                    has_y_limit = True
-            if not has_y_limit:
-                unbounded = True
-        
-        if unbounded:
+    def solve(self) -> Tuple[Optional[Tuple[float, float]], Optional[float]]:
+        candidates = self.all_candidate_points()
+        if not candidates:
             return None, None
 
-    return best_point, best_val
+        best_point = None
+        best_val = None
+
+        for x, y in candidates:
+            val = self.objective[0] * x + self.objective[1] * y
+            if best_val is None:
+                best_val = val
+                best_point = (x, y)
+            elif self.maximize and val > best_val:
+                best_val = val
+                best_point = (x, y)
+            elif not self.maximize and val < best_val:
+                best_val = val
+                best_point = (x, y)
+
+        # Check simplified unbounded scenario
+        if best_point is None:
+            return None, None
+
+        return best_point, best_val
+
+
+def solve_lpp(constraints: List[Tuple[float, float, float, int]],
+              objective: Tuple[float, float],
+              maximize: bool = True) -> Tuple[Optional[Tuple[float, float]], Optional[float]]:
+    problem = LppProblem(
+        constraints=[Constraint(a, b, c, typ) for (a, b, c, typ) in constraints],
+        objective=objective,
+        maximize=maximize
+    )
+    return problem.solve()

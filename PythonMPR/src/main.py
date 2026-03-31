@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-from solver import solve_lpp
+from solver import Constraint, LppProblem, solve_lpp
 from plotter import plot_graph
 import customtkinter as ctk
 from plotter import plot_graph, plot_empty_graph
@@ -425,7 +425,12 @@ def run_solver():
         p = get_float(entry_p, "p")
         q = get_float(entry_q, "q")
 
-        sol_point, sol_val = solve_lpp(constraints, (p, q), var_max.get())
+        problem = LppProblem(
+            constraints=[Constraint(a, b, c, typ) for (a, b, c, typ) in constraints],
+            objective=(p, q),
+            maximize=var_max.get()
+        )
+        sol_point, sol_val = problem.solve()
 
         if sol_point is None:
             if sol_val is None:
